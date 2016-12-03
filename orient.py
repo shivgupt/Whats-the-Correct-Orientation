@@ -12,27 +12,7 @@ ____________________________________________________________
 2. How my program works
 ____________________________________________________________
 
-Useage:
- $ ./spam mode technique dataset-directory model-file
-
-where - mode is one of 'test' or 'train'
-      - technique is one of 'dt' or 'bayes'
-      - dataset-directory is the name of a directory containing test/ and train/
-      - model-file is the filename to either write to if mode == 'train'
-        or read from if mode == 'test'
-
-Assuming the test/ and train/ data is in a folder called 'data',
-a full test of all the code in this module can be achieved with the following:
-
- $ ./spam train bayes data model   # 7  - 10 seconds runtime
- $ ./spam test bayes data model    # 4  - 7  seconds runtime
- $ ./spam train dt data model      # 22 - 25 seconds runtime
- $ ./spam test dt data model       # 1  - 4  seconds runtime
-
-The first commands will write out a file called model.
-The second will read the model file and print bayes classification results
-The third will overwrite the old model file and replace it with one for dt
-The fourth will read the new model file and print dt classification results
+see README.md
 
 ____________________________________________________________
 
@@ -50,17 +30,39 @@ ____________________________________________________________
 """
 
 import sys
-import os
 import pickle
 
-# k-nearest-neighbors
+import nearest
+import adaboost
+import nnet
+
+
+# Load training data
+try:
+    with open(sys.argv[1]) as trainf:
+        traind = [x.rstrip().split(' ') for x in trainf.readlines()]
+except IOError:
+    print " Invalid training data filename:", sys.argv[1]
+    sys.exit()
+
+
+# load testing data
+try:
+    with open(sys.argv[2]) as testf:
+        testd = [x.rstrip().split(' ') for x in testf.readlines()]
+except IOError:
+    print " Invalid testing data filename:", sys.argv[2]
+    sys.exit()
+
+
+# activate k-nearest-neighbors
 if len(sys.argv) == 4 and sys.argv[3] == 'nearest': # nearest
 
+    nearest.train(traind)
+    nearest.test(testd)
 
-    print "KNN activated!"
 
-
-# adaboost
+# activate adaboost
 elif len(sys.argv) == 5 and sys.argv[3] == 'adaboost':
     try:
         stumps = int(sys.argv[4])
@@ -68,20 +70,20 @@ elif len(sys.argv) == 5 and sys.argv[3] == 'adaboost':
         print " Invalid number of stumps:", sys.argv[4]
         sys.exit()
 
+    adaboost.train(traind, stumps)
+    adaboost.test(testd, stumps)
 
-    print "Adaboost activated!"
 
-
-# neural network
+# activate neural network
 elif len(sys.argv) == 5 and sys.argv[3] == 'nnet':
     try:
         nnodes = int(sys.argv[4])
     except ValueError:
-        print " Invalid number of stumps:", sys.argv[4]
+        print " Invalid number of hidden nodes:", sys.argv[4]
         sys.exit()
 
-
-    print "Neural Network activated!"
+    nnet.train(traind, nnodes)
+    nnet.test(testd, nnodes)
 
 
 elif len(sys.argv) == 5 and sys.argv[3] == 'best':
